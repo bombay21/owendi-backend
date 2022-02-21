@@ -53,15 +53,25 @@ router.post("/register", async (req, res) => {
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
-    
+
+    // console.log(`REQ ::> ${JSON.stringify(req.body)}`);
+
     // ensure request is valid
     if (!(email && password)) {
-      res.status(400).send({ message: "All input fields are required!" });
+      return res
+        .status(200)
+        .send({
+          code: 400,
+          isSuccess: false,
+          message: "All input fields are required!",
+        });
     }
 
     let user = await User.findOne({ email: req.body.email });
 
-    if (!user) res.status(400).json({ message: "user not found!" });
+    if (!user) return res
+      .status(200)
+      .json({ code: 400, isSuccess: false, message: "user not found!" });
 
     // Decrypt user password
     const dec_password = CryptoJS.AES.decrypt(
@@ -78,13 +88,21 @@ router.post("/login", async (req, res) => {
           isAdmin: others.isAdmin,
         },
         process.env.JWT_KEY,
-        { expiresIn: "1h" }
+        { expiresIn: "2d" }
       );
 
-      res.status(200).json({ ...others, token });
-    } else res.status(401).json({ error: "email or password mismatch" });
+      return res.status(200).json({ code: 200, isSuccess: true, payload:{...others, token} });
+    } else return res
+      .status(200)
+      .json({
+        code: 400,
+        isSuccess: false,
+        message: "email or password mismatch",
+      });
   } catch (err) {
-    res.status(400).send({ error: err });
+    return res
+      .status(200)
+      .json({ code: 400, isSuccess: false, message: err.message });
   }
 });
 
